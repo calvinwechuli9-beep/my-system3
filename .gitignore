@@ -1,0 +1,9 @@
+node_modules/
+landtrust.db
+uploads/*
+!uploads/.gitkeep
+.env
+.env.*
+!.env.example
+npm-debug.log*
+My system
