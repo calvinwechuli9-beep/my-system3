@@ -9,8 +9,7 @@ function showLogin(msg) {
  <div class="roles"><label><input type="radio" name="r" value="${RO}" checked> Records Officer</label><label><input type="radio" name="r" value="${AD}"> Administrator</label></div>
  <div id="le" class="err" role="alert" style="${msg ? "" : "display:none"}">${esc(msg || "")}</div>
  <button style="width:100%;margin-top:22px;font-size:17px">LOGIN</button>
- <p class="hint">Forgot password? Contact system administrator</p>
- <p class="hint">Demo: RO-2026-014 / officer123 (Records Officer) · ADM-002 / admin123 (Administrator)</p></form></div>`;
+ <p class="hint">Forgot password? Contact system administrator</p></form></div>`;
 }
 async function doLogin(e) {
   e.preventDefault();
