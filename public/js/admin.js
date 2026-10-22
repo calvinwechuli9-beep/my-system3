@@ -42,7 +42,7 @@ const CAP = [
   ["View duplicate alerts", "1,1"],
   ["Generate ownership reports", "1,1"],
   ["Manage user accounts and permissions", "0,1"],
-  ["View audit trail", "0,1"],
+  ["View audit trail", "1,1"],
 ];
 function perms() {
   return `<h1>Permissions</h1><p>Access is granted by role. These permissions are enforced at login and on every panel.</p><div class="wrap"><table><tr><th>Capability</th><th>${RO}</th><th>${AD}</th></tr>${CAP.map(
@@ -53,10 +53,10 @@ function perms() {
   ).join("")}</table></div>`;
 }
 function auditTbl() {
-  return `<div class="wrap"><table><tr><th>Date / Time</th><th>User</th><th>Action</th><th>Record ID</th></tr>${db.audit
+  return `<div class="wrap"><table><tr><th>Date / Time</th><th>Staff member</th><th>Role</th><th>Action</th><th>Record / Reference</th></tr>${db.audit
     .map(
       (a) =>
-        `<tr><td>${fmt(a[0], 1)}</td><td>${esc(a[1])}</td><td>${esc(a[2])}</td><td>${esc(a[3])}</td></tr>`,
+        `<tr><td>${fmt(a.ts, 1)}</td><td>${esc(a.staffId)} · ${esc(a.name)}</td><td>${esc(a.role)}</td><td>${esc(a.action)}</td><td>${a.recordId ? `#${esc(a.recordId)} · ` : ""}${esc(a.ref || "—")}</td></tr>`,
     )
     .join("")}</table></div>`;
 }
@@ -64,7 +64,7 @@ function genBox() {
   return `<h2>Generate Ownership Report / Certificate</h2><label for="g_t">Title / Parcel Number</label><div class="srch"><input id="g_t" placeholder="NAK/0456/2021" onkeydown="if(event.key==='Enter')gen()"><button onclick="gen()">Generate</button><button class="ghost" onclick="pdf()">Download PDF</button></div><p id="ge" class="err" role="alert" style="display:none"></p><div id="certbox"></div>`;
 }
 function audit() {
-  return `<h1>Audit Trail / Activity Log</h1>${auditTbl()}${genBox()}`;
+  return `<h1>Audit Trail / Activity Log</h1><p>Shows staff sign-ins, record views and changes, deed uploads, certificates, and account actions.</p>${auditTbl()}${S.role === AD ? genBox() : ""}`;
 }
 function reports() {
   return `<h1>Generate Reports</h1>${genBox()}`;

@@ -28,6 +28,7 @@ function tbl(rows) {
         <td>${r.size} Ac</td>
         <td>${esc(r.loc)}</td>
         <td>${pill(r.status)}</td>
+        <td>${esc(r.creator)}</td>
         <td>
           <button style="all:unset;cursor:pointer;color:var(--head);font-weight:700"
                   onclick="edit(${idx(r)})">
@@ -43,7 +44,7 @@ function tbl(rows) {
       <table>
         <tr>
           <th>Title No.</th><th>Owner Name</th><th>Parcel Size</th>
-          <th>Location</th><th>Status</th><th>Actions</th>
+          <th>Location</th><th>Status</th><th>Added By</th><th>Actions</th>
         </tr>
         ${body}
       </table>
@@ -243,10 +244,22 @@ function dups() {
 function edit(i) {
   const r = db.recs[i];
   const dialog = $("dlg");
+  const mapQuery = encodeURIComponent(r.loc);
 
   dialog.innerHTML = `
     <form method="dialog" onsubmit="return upd(event, ${i})">
       <h1>${esc(r.title)}</h1>
+
+      <h2>Land location</h2>
+      <p>${esc(r.loc)}</p>
+      <iframe
+        class="location-map"
+        title="Google Map showing ${esc(r.loc)}"
+        src="https://www.google.com/maps?q=${mapQuery}&amp;output=embed"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <p><a class="lnk" href="https://www.google.com/maps/search/?api=1&amp;query=${mapQuery}"
+            target="_blank" rel="noopener noreferrer">Open this location in Google Maps</a></p>
 
       <label for="e_o">Owner Full Name</label>
       <input id="e_o" value="${esc(r.owner)}">

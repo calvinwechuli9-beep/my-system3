@@ -1,5 +1,5 @@
 const express = require("express");
-const { db, audit } = require("../database");
+const { db, audit, isLocal } = require("../database");
 const {
   auth,
   startSession,
@@ -31,17 +31,23 @@ router.post(
       return bad(
         "Staff ID or password is incorrect. Check both and try again.",
       );
-    if (!user.is_active)
+    if (!user.is_active) {
+      await audit(user.user_id, "Login blocked - inactive account", "Login");
       return bad(
         "This account is locked or deactivated. Contact the system administrator.",
         403,
       );
+    }
     if (!verify(pw, user.password_hash)) {
       const failedAttempts = user.failed_attempts + 1;
+      const active = isLocal ? Number(failedAttempts < 3) : failedAttempts < 3;
       await db.query(
         "UPDATE users SET failed_attempts = $1, is_active = $2 WHERE user_id = $3",
-        [failedAttempts, failedAttempts < 3, user.user_id],
+        [failedAttempts, active, user.user_id],
       );
+      await audit(user.user_id, "Failed login attempt", "Login");
+      if (failedAttempts >= 3)
+        await audit(user.user_id, "Account locked after failed login", "Login");
       return failedAttempts >= 3
         ? bad(
             "Too many failed attempts. Account locked; contact the system administrator.",
@@ -51,11 +57,17 @@ router.post(
             `Staff ID or password is incorrect. ${3 - failedAttempts} attempt(s) left.`,
           );
     }
-    if (user.role !== role)
+    if (user.role !== role) {
+      await audit(
+        user.user_id,
+        "Login rejected - incorrect role selected",
+        "Login",
+      );
       return bad(
         `This account is not registered as ${role}. Select the correct role.`,
         403,
       );
+    }
 
     await db.query("UPDATE users SET failed_attempts = 0 WHERE user_id = $1", [
       user.user_id,

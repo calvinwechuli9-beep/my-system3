@@ -1,6 +1,6 @@
 /** Administrator routes: audit trail, user accounts and database viewer */
 const express = require("express");
-const { db, audit } = require("../database");
+const { db, audit, isLocal } = require("../database");
 const { auth } = require("../middleware/auth");
 const { RO, AD, hash } = require("../utils/helpers");
 const asyncRoute = require("../utils/asyncRoute");
@@ -10,18 +10,23 @@ const TABLES = ["users", "land_records", "audit_log"];
 
 router.get(
   "/api/audit",
-  auth(AD),
+  auth(),
   asyncRoute(async (q, s) => {
     const { rows } = await db.query(
-      `SELECT a.logged_at,u.staff_id,u.full_name,a.action,a.record_ref
+      `SELECT a.log_id,a.logged_at,u.staff_id,u.full_name,u.role,
+              a.action,a.record_id,a.record_ref
        FROM audit_log a JOIN users u ON u.user_id=a.user_id
        ORDER BY a.log_id DESC`,
     );
     s.json({
       audit: rows.map((a) => ({
+        id: a.log_id,
         ts: new Date(a.logged_at).toISOString(),
-        user: `${a.staff_id} ${a.full_name.replace(". ", ".")}`,
+        staffId: a.staff_id,
+        name: a.full_name,
+        role: a.role,
         action: a.action,
+        recordId: a.record_id,
         ref: a.record_ref,
       })),
     });
@@ -71,7 +76,7 @@ router.post(
         [id, b.name.trim(), hash(b.pw), b.role],
       );
     } catch (error) {
-      if (error.code === "23505")
+      if (error.code === "23505" || error.code === "SQLITE_CONSTRAINT_UNIQUE")
         return s.status(409).json({ error: "That staff ID already exists." });
       throw error;
     }
@@ -110,19 +115,31 @@ router.get(
   asyncRoute(async (q, s) => {
     const tables = await Promise.all(
       TABLES.map(async (name) => {
-        const columns = await db.query(
-          `SELECT column_name,data_type,is_nullable,column_default
-           FROM information_schema.columns
-           WHERE table_schema = current_schema() AND table_name = $1
-           ORDER BY ordinal_position`,
-          [name],
-        );
+        const columns = isLocal
+          ? await db.query(`PRAGMA table_info("${name}")`)
+          : await db.query(
+              `SELECT column_name,data_type,is_nullable,column_default
+               FROM information_schema.columns
+               WHERE table_schema = current_schema() AND table_name = $1
+               ORDER BY ordinal_position`,
+              [name],
+            );
         const data = await db.query(`SELECT * FROM "${name}" LIMIT 500`);
         const count = await db.query(
           `SELECT COUNT(*)::int AS count FROM "${name}"`,
         );
-        const cols = columns.rows.map((c) => c.column_name);
-        const definition = columns.rows
+        const columnRows = columns.rows.map((column) =>
+          isLocal
+            ? {
+                column_name: column.name,
+                data_type: column.type || "TEXT",
+                is_nullable: column.notnull ? "NO" : "YES",
+                column_default: column.dflt_value,
+              }
+            : column,
+        );
+        const cols = columnRows.map((c) => c.column_name);
+        const definition = columnRows
           .map(
             (c) =>
               `  ${c.column_name} ${c.data_type}${c.is_nullable === "NO" ? " NOT NULL" : ""}${c.column_default ? ` DEFAULT ${c.column_default}` : ""}`,

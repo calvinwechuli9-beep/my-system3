@@ -9,7 +9,7 @@ const asyncRoute = require("../utils/asyncRoute");
 
 const router = express.Router();
 const SELECT_RECORDS = `
-  SELECT r.*, u.staff_id
+  SELECT r.*, u.staff_id, u.full_name
   FROM land_records r
   JOIN users u ON u.user_id = r.created_by`;
 
@@ -26,6 +26,7 @@ function toRecord(r) {
     deed: r.deed_path ? path.basename(r.deed_path).replace(/^\d+_/, "") : "",
     status: r.status,
     by: r.staff_id,
+    creator: `${r.staff_id} · ${r.full_name}`,
   };
 }
 

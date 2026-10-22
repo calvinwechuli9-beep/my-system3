@@ -42,6 +42,7 @@ const NAV = {
     ["search", "Search Records"],
     ["upload", "Upload Title Deed"],
     ["dups", "Duplicate Alerts"],
+    ["audit", "Audit Trail"],
     ["out", "Logout"],
   ],
   [AD]: [
@@ -81,14 +82,17 @@ async function load() {
   if (S.role === AD) {
     const u = await api("/api/users");
     db.users = u.users || [];
-    const a = await api("/api/audit");
-    db.audit = (a.audit || []).map((x) => [
-      new Date(x.ts),
-      x.user,
-      x.action,
-      x.ref,
-    ]);
   }
+  const a = await api("/api/audit");
+  db.audit = (a.audit || []).map((x) => ({
+    ts: new Date(x.ts),
+    staffId: x.staffId,
+    name: x.name,
+    role: x.role,
+    action: x.action,
+    recordId: x.recordId,
+    ref: x.ref,
+  }));
 }
 function toast(m) {
   const t = $("toast");
