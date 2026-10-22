@@ -82,7 +82,17 @@ if (isLocal) {
     ssl:
       process.env.DATABASE_SSL === "false"
         ? false
-        : { rejectUnauthorized: true },
+        : {
+            rejectUnauthorized: true,
+            ...(process.env.DATABASE_SSL_CA_BASE64
+              ? {
+                  ca: Buffer.from(
+                    process.env.DATABASE_SSL_CA_BASE64,
+                    "base64",
+                  ).toString("utf8"),
+                }
+              : {}),
+          },
     max: process.env.VERCEL ? 1 : 5,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 10000,

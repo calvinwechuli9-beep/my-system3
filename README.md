@@ -69,6 +69,9 @@ source dump.
    the same database):
    - `DATABASE_URL` — the Supabase Postgres connection string.
    - `DATABASE_SSL` — `true`.
+   - `DATABASE_SSL_CA_BASE64` — base64-encoded Supabase root certificate from
+     Database Settings → SSL Configuration. This lets the app verify the
+     database server certificate while connecting over TLS.
    - `SUPABASE_URL` — the Supabase project URL.
    - `SUPABASE_SERVICE_ROLE_KEY` — the secret service role key.
    - `SUPABASE_STORAGE_BUCKET` — `title-deeds`.
